@@ -16,7 +16,7 @@
         .row { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; }
         
         button { padding: 10px 12px; background: #3d3d3d; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; }
-        .btn-main { background: #007bff !important; } /* Add Text */
+        .btn-main { background: #007bff !important; } /*Type*/
         .btn-save { background: #28a745 !important; } /* Save Image */
         .btn-before { background: #d9534f !important; }
         .btn-after { background: #5cb85c !important; }
@@ -66,8 +66,8 @@
 <div class="main-container">
     <div class="header">
         <div class="row">
-            <button class="btn-main" onclick="showModal()">ADD TEXT +</button>
-            <button class="btn-save" onclick="saveImage()">DOWNLOAD ↓</button>
+            <button class="btn-main" onclick="showModal()">ADD TEXT</button>
+            <button class="btn-save" onclick="saveImage()">DOWNLOAD</button>
             <button onclick="undo()">UNDO</button>
             <button onclick="redo()">REDO</button>
         </div>
@@ -100,7 +100,7 @@
 
 <div id="textModal">
     <div class="modal-box">
-        <input type="text" id="txtInput" placeholder="စာသားရိုက်ပါ...">
+        <input type="text" id="txtInput" placeholder="Type Here">
         <div class="row" style="gap: 10px;">
             <button style="background:#28a745; flex:1; padding: 12px;" onclick="createText()">ADD</button>
             <button style="background:#dc3545; flex:1; padding: 12px;" onclick="hideModal()">CANCEL</button>
