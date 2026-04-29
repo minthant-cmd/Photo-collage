@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Photo Editor Pro - Full HD</title>
+    <title>Photo Editor Pro - Final</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        * { box-sizing: border-box; touch-action: none; margin: 0; padding: 0; }
+        * { box-sizing: border-box; touch-action: none; margin: 0; padding: 0; user-select: none; }
         body { background: #000; color: white; font-family: -apple-system, sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
-        .main-container { display: flex; flex-direction: column; height: 100%; width: 100%; }
+        .main-container { display: flex; flex-direction: column; height: 100%; width: 100%; position: relative; }
         
-        /* Header */
-        .header { padding: 10px 5px; background: #1a1a1a; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #333; flex-shrink: 0; }
+        /* Header UI */
+        .header { padding: 10px 5px; background: #1a1a1a; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #333; flex-shrink: 0; z-index: 10; }
         .row { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
         button { padding: 12px 14px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 11px; cursor: pointer; }
         .btn-blue { background: #007bff !important; } 
@@ -19,50 +19,77 @@
         .btn-red { background: #d9534f !important; }
         .btn-success { background: #5cb85c !important; }
 
-        /* Color Selection Bar */
+        /* Color Bar */
         .color-bar { display: flex; justify-content: center; gap: 12px; padding: 8px; background: #222; border-radius: 30px; margin: 5px 15px; border: 1px solid #333; }
         .c-btn { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #555; }
 
         /* Editor Area */
-        .editor-view { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #080808; position: relative; padding: 10px; }
+        .editor-view { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #080808; position: relative; padding: 10px; z-index: 1; }
         #collage-grid { 
             width: 95vw; height: 95vw; max-width: 450px; max-height: 450px; 
             background: #fff; display: grid; gap: 4px; border: 4px solid #fff; 
             position: relative; overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.8);
         }
         
+        /* Image Slots */
         .slot { background: #222; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         .slot img { position: absolute; user-select: none; pointer-events: none; max-width: none; image-rendering: -webkit-optimize-contrast; }
 
-        /* Text Layer */
+        /* Text Styling */
         .floating-text {
             position: absolute; z-index: 100; padding: 10px; font-weight: 900; color: white;
             text-shadow: 2px 2px 10px #000; white-space: nowrap; font-size: 35px;
+            cursor: move; left: 0; top: 0; will-change: transform;
         }
         .floating-text.active { border: 2px dashed #007bff; background: rgba(0,123,255,0.1); }
 
         .size-control { width: 100%; max-width: 380px; height: 70px; display: none; flex-direction: column; align-items: center; justify-content: center; margin-top: 10px; }
         .size-control input { width: 80%; accent-color: #007bff; }
 
-        /* Layout Grids */
+        /* Layout Grid System */
         .grid-1 { grid-template-columns: 1fr; }
         .grid-2 { grid-template-columns: 1fr 1fr; }
         .grid-3 { grid-template-areas: "t t" "bl br"; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
         .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
+        /* Trash Can */
+        #trash-can {
+            position: absolute; right: 25px; bottom: 25px;
+            width: 65px; height: 65px;
+            background: rgba(217, 83, 79, 0.2);
+            border: 2px solid #d9534f;
+            border-radius: 50%;
+            display: none;
+            align-items: center; justify-content: center;
+            z-index: 1000;
+            color: #d9534f;
+            transition: all 0.2s ease;
+        }
+        #trash-can.hover { background: #d9534f; color: white; transform: scale(1.2); }
+
+        /* Modal */
         #textModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
         .modal-box { background: #222; padding: 30px; border-radius: 15px; width: 85%; max-width: 320px; text-align: center; }
-        .modal-box input { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #000; color: white; border: 1px solid #555; font-size: 18px; }
+        .modal-box input { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #000; color: white; border: 1px solid #555; font-size: 18px; outline: none; }
     </style>
 </head>
 <body>
 
 <div class="main-container">
+    <div id="trash-can">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+    </div>
+
     <div class="header">
         <div class="row">
             <button class="btn-blue" onclick="showModal()">ADD TEXT</button>
-            <button class="btn-green" onclick="saveImage()">DOWNLOAD</button>
-            <button onclick="location.reload()">CLEAR</button>
+            <button class="btn-green" onclick="saveImage()">DOWNLOAD HD</button>
+            <button onclick="location.reload()">CLEAR ALL</button>
         </div>
         <div class="row">
             <button onclick="updateLayout('grid-1')">1P</button>
@@ -86,17 +113,17 @@
         <div id="collage-grid" class="grid-1"></div>
         <div class="size-control" id="sizeCtrl">
             <input type="range" id="sizeRange" min="10" max="200" value="35">
-            <span style="font-size: 11px; color: #888; margin-top: 5px;">TEXT SIZE</span>
+            <span style="font-size: 11px; color: #888; margin-top: 5px;">ADJUST SIZE</span>
         </div>
     </div>
 </div>
 
 <div id="textModal">
     <div class="modal-box">
-        <input type="text" id="txtInput" placeholder="Enter text...">
+        <input type="text" id="txtInput" placeholder="Enter text here...">
         <div class="row">
-            <button class="btn-green" style="flex:1" onclick="createText()">ADD</button>
-            <button class="btn-red" style="flex:1" onclick="hideModal()">CANCEL</button>
+            <button class="btn-green" style="flex:1; padding:15px;" onclick="createText()">ADD</button>
+            <button class="btn-red" style="flex:1; padding:15px;" onclick="hideModal()">CANCEL</button>
         </div>
     </div>
 </div>
@@ -107,24 +134,24 @@
     const grid = document.getElementById('collage-grid');
     const fileInput = document.getElementById('fileInput');
     const sizeCtrl = document.getElementById('sizeCtrl');
+    const trashCan = document.getElementById('trash-can');
     let selectedText = null;
 
-    // --- Image Interaction (Zoom/Pan) ---
+    // --- Image Zoom & Pan Logic (Stable Version) ---
     function initSlotInteraction(slot) {
         let scale = 1, lastScale = 1, posX = 0, posY = 0, lastPosX = 0, lastPosY = 0;
         let startDist = 0, isDragging = false, startX = 0, startY = 0;
 
         slot.addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('floating-text')) return;
+
             const img = slot.querySelector('img');
             if (!img) {
                 fileInput.onchange = (ev) => {
                     const r = new FileReader();
                     r.onload = (f) => {
-                        const newImg = document.createElement('img');
-                        newImg.src = f.target.result;
-                        newImg.style.transform = `translate(0px, 0px) scale(1)`;
-                        slot.innerHTML = ''; // Clear previous
-                        slot.appendChild(newImg);
+                        slot.innerHTML = `<img src="${f.target.result}" style="transform: translate(0px, 0px) scale(1)">`;
+                        initSlotInteraction(slot); // Re-bind for the new image
                     };
                     r.readAsDataURL(ev.target.files[0]);
                 };
@@ -142,8 +169,10 @@
         });
 
         slot.addEventListener('touchmove', (e) => {
+            if (e.target.classList.contains('floating-text')) return;
             const img = slot.querySelector('img');
             if (!img) return;
+
             if (e.touches.length === 2) {
                 const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
                 scale = lastScale * (dist / startDist);
@@ -159,7 +188,7 @@
         });
     }
 
-    // --- Layouts ---
+    // --- Layout Control ---
     function updateLayout(type) {
         const currentTexts = Array.from(document.querySelectorAll('.floating-text'));
         grid.innerHTML = '';
@@ -175,20 +204,24 @@
         currentTexts.forEach(t => grid.appendChild(t));
     }
 
-    // --- Text Logic ---
+    // --- Drag and Drop Text to Delete ---
     function addFloatingText(val, color) {
         const el = document.createElement('div');
         el.className = 'floating-text';
         el.innerText = val;
         el.style.color = color;
-        el.dataset.x = 50; el.dataset.y = 50;
-        el.style.transform = `translate(0px, 0px)`;
+        el.style.transform = `translate(20px, 20px)`; 
         grid.appendChild(el);
         makeDraggable(el);
     }
 
     function makeDraggable(el) {
-        let tx = 0, ty = 0, startX = 0, startY = 0;
+        function getTranslate(element) {
+            const style = window.getComputedStyle(element);
+            const matrix = new WebKitCSSMatrix(style.transform);
+            return { x: matrix.m41, y: matrix.m42 };
+        }
+
         el.addEventListener('touchstart', (e) => {
             e.stopPropagation();
             document.querySelectorAll('.floating-text').forEach(t => t.classList.remove('active'));
@@ -196,24 +229,38 @@
             selectedText = el;
             sizeCtrl.style.display = 'flex';
             document.getElementById('sizeRange').value = parseInt(window.getComputedStyle(el).fontSize);
-            startX = e.touches[0].pageX - tx;
-            startY = e.touches[0].pageY - ty;
+            
+            trashCan.style.display = 'flex';
+            const initial = getTranslate(el);
+            el.startX = e.touches[0].pageX - initial.x;
+            el.startY = e.touches[0].pageY - initial.y;
         });
+
         el.addEventListener('touchmove', (e) => {
-            tx = e.touches[0].pageX - startX;
-            ty = e.touches[0].pageY - startY;
-            el.style.transform = `translate(${tx}px, ${ty}px)`;
+            const x = e.touches[0].pageX - el.startX;
+            const y = e.touches[0].pageY - el.startY;
+            el.style.transform = `translate(${x}px, ${y}px)`;
+
+            const tRect = el.getBoundingClientRect();
+            const bRect = trashCan.getBoundingClientRect();
+            const overlap = !(tRect.right < bRect.left || tRect.left > bRect.right || tRect.bottom < bRect.top || tRect.top > bRect.bottom);
+            trashCan.classList.toggle('hover', overlap);
         });
-        el.addEventListener('touchend', (e) => {
-            if (e.timeStamp - (el.lastTap || 0) < 300) { el.remove(); sizeCtrl.style.display='none'; }
-            el.lastTap = e.timeStamp;
+
+        el.addEventListener('touchend', () => {
+            trashCan.style.display = 'none';
+            if (trashCan.classList.contains('hover')) {
+                el.remove();
+                selectedText = null;
+                sizeCtrl.style.display = 'none';
+            }
         });
     }
 
+    // --- Color & UI Helpers ---
     function applyColor(color) { if(selectedText) selectedText.style.color = color; }
     document.getElementById('sizeRange').oninput = (e) => { if(selectedText) selectedText.style.fontSize = e.target.value + "px"; };
-
-    function showModal() { document.getElementById('textModal').style.display='flex'; }
+    function showModal() { document.getElementById('textModal').style.display='flex'; document.getElementById('txtInput').focus(); }
     function hideModal() { document.getElementById('textModal').style.display='none'; }
     function createText() {
         const val = document.getElementById('txtInput').value;
@@ -221,13 +268,13 @@
         hideModal();
     }
 
+    // Export HD
     function saveImage() {
         document.querySelectorAll('.floating-text').forEach(t => t.classList.remove('active'));
-        sizeCtrl.style.display = 'none';
         html2canvas(grid, { scale: 3, useCORS: true, backgroundColor: "#000" }).then(canvas => {
             const a = document.createElement('a');
             a.download = `PhotoPro_${Date.now()}.png`;
-            a.href = canvas.toDataURL();
+            a.href = canvas.toDataURL("image/png");
             a.click();
         });
     }
