@@ -30,7 +30,13 @@ background:#fff;display:grid;gap:4px;border:4px solid #fff;position:relative;ove
 
 .grid-1{grid-template-columns:1fr;}
 .grid-2{grid-template-columns:1fr 1fr;}
-.grid-3{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}
+.grid-3{
+grid-template-columns:1.2fr 0.8fr;
+grid-template-rows:1fr 1fr;
+grid-template-areas:
+"big top"
+"big bottom";
+}
 .grid-4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}
 
 .slot{background:#222;position:relative;overflow:hidden;}
@@ -116,9 +122,9 @@ outline:none;
 
 <div class="row">
 <button class="btn-blue" onclick="addText()">ADD TEXT</button>
-<button class="btn-green" onclick="download()">DOWNLOAD HD</button>
+<button class="btn-green" onclick="download()">DOWNLOAD</button>
 <button class="btn-yellow" onclick="undo()">UNDO</button>
-<button class="btn-red" onclick="redo()">REDO</button>
+<button class="btn-green" onclick="redo()">REDO</button>
 <button onclick="clearAll()">CLEAR</button>
 </div>
 
@@ -222,19 +228,76 @@ if(t==='grid-4')c=4;
 
 for(let i=0;i<c;i++){
 const s=document.createElement('div');
+
+if(t==='grid-3'){
+if(i===0)s.style.gridArea='big';
+if(i===1)s.style.gridArea='top';
+if(i===2)s.style.gridArea='bottom';
+}
 s.className='slot';
+
+let scale=1;
+let posX=0;
+let posY=0;
+let startX=0;
+let startY=0;
+let lastScale=1;
+let startDist=0;
+let dragging=false;
 
 s.onclick=()=>{
 file.click();
 file.onchange=(e)=>{
 const r=new FileReader();
 r.onload=(ev)=>{
-s.innerHTML=`<img src="${ev.target.result}">`;
+s.innerHTML=`<img src="${ev.target.result}" style="transform:translate(0px,0px) scale(1)">`;
 save();
 };
 r.readAsDataURL(e.target.files[0]);
 }
 }
+
+s.ontouchstart=(e)=>{
+const img=s.querySelector('img');
+if(!img)return;
+
+if(e.touches.length===2){
+startDist=Math.hypot(
+e.touches[0].pageX-e.touches[1].pageX,
+e.touches[0].pageY-e.touches[1].pageY
+);
+}else{
+dragging=true;
+startX=e.touches[0].pageX-posX;
+startY=e.touches[0].pageY-posY;
+}
+};
+
+s.ontouchmove=(e)=>{
+const img=s.querySelector('img');
+if(!img)return;
+
+if(e.touches.length===2){
+const dist=Math.hypot(
+e.touches[0].pageX-e.touches[1].pageX,
+e.touches[0].pageY-e.touches[1].pageY
+);
+
+scale=lastScale*(dist/startDist);
+scale=Math.max(1,Math.min(scale,5));
+}else if(dragging){
+posX=e.touches[0].pageX-startX;
+posY=e.touches[0].pageY-startY;
+}
+
+img.style.transform=`translate(${posX}px,${posY}px) scale(${scale})`;
+};
+
+s.ontouchend=()=>{
+dragging=false;
+lastScale=scale;
+save();
+};
 
 grid.appendChild(s);
 }
